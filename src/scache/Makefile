@@ -11,17 +11,20 @@ else
 	SHOBJ_LDFLAGS ?= -bundle -undefined dynamic_lookup
 endif
 
+MYSQL_CFLAGS =  -I/usr/include/mysql -DBIG_JOINS=1  -fno-strict-aliasing    -g -DNDEBUG
+MYSQL_LIBS =  -L/usr/lib/x86_64-linux-gnu -lmysqlclient -lpthread -lz -lm -ldl
+
 .SUFFIXES: .c .so .xo .o
 
 all: scache.so
 
 .c.xo:
-	$(CC) -I. $(CFLAGS) $(SHOBJ_CFLAGS) -fPIC -c $< -o $@
+	$(CC) -I. $(CFLAGS) $(SHOBJ_CFLAGS) $(MYSQL_CFLAGS) -fPIC -c $< -o $@
 
 scache.xo: ../redismodule.h
 
 scache.so: scache.xo
-	$(LD) -o $@ $< $(SHOBJ_LDFLAGS) $(LIBS) -lc
+	$(LD) -o $@ $< $(SHOBJ_LDFLAGS) $(LIBS) $(MYSQL_LIBS) -lc
 
 clean:
 	rm -rf *.xo *.so

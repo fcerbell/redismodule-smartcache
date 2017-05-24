@@ -4,7 +4,9 @@
 ///       @author  François Cerbelle (Fanfan), francois@cerbelle.net
 ///    @copyright  Copyright (c) 2017, François Cerbelle
 ///
-/// @todo 
+/// @todo DB abstraction layer with dynamically loadable modules (dl)
+/// @todo Connection pool
+///
 /// @bug 
 /// @version
 /// @since
@@ -27,6 +29,7 @@
 
 
 #include "../redismodule.h"
+#include <mysql/mysql.h>
 #include <string.h> // memcpy
 #include <stdlib.h> // atoi
 
@@ -161,16 +164,65 @@ int SCacheGet_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
         }
 
         // TODO: Query MySQL
+//        MYSQL * connection, mysql;
+//
+//        mysql_init(&mysql);
+//        connection = mysql_real_connect(&mysql, "localhost", "orausr", "orapw", "oradb", 0, 0, 0);
+//        if( connection == NULL ) 
+//        { return -1; }
+//        else 
+//        { return 0; }
+//
+//        // int mysql_query(MYSQL *mysql, const char *stmt_str)
+//        
+//        char *query = "SELECT symbol, openPrice, currPrice, high52, low52, FROM Stock WHERE symbol = '%s'";
+//        char *sql;
+//        int state;
+//
+//        error = (char *)NULL;
+//        sql = (char *)malloc((strlen(query) + strlen(symbol) + 1) * sizeof(char));
+//        sprintf(sql, query, symbol);
+//        state = mysql_query(connection, sql);
+//        free(sql);
+//        if( state != 0 ) {
+//            error = mysql_error(connection);
+//            return (Stock *)NULL;
+//        }
+//        else {
+//            MYSQL_RES *result;
+//            Stock *stock;
+//            MYSQL_ROW row;
+//
+//            result = mysql_store_result(connection);
+//            if( result == (MYSQL_RES *)NULL ) {
+//                error = mysql_error(connection);
+//                return (Stock *)NULL;
+//            }
+//            stock = (Stock *)malloc(sizeof(Stock));
+//            row = mysql_fetch_row(result);
+//            if( !row ) {
+//                error = "Invalid symbol.";
+//                return (Stock *)NULL;
+//            }
+//            stock->symbol = row[0];
+//            stock->open_price = atof(row[1]);
+//            stock->current_price = atof(row[2]);
+//            stock->high52 = atof(row[3]);
+//            stock->low52 = atof(row[4]);
+//            return stock;
+//        }
+//
+//
+//        if( connection != NULL ) {
+//            mysql_close(connection);
+//            connection = NULL;
+//        }
+//
 
-unsigned short count=0;
-RedisModule_Log(ctx, "notice", "%d",count++);
-        RedisModule_Call(ctx,"RPUSH","scc",key,"Id,Nom,Prénom,Date de naissance");
-RedisModule_Log(ctx, "notice", "%d",count++);
-        RedisModule_Call(ctx,"RPUSH","scc",key,"INT,VARCHAR(255),VARCHAR(255),DATETIME");
-RedisModule_Log(ctx, "notice", "%d",count++);
-        RedisModule_Call(ctx,"RPUSH","scc",key,"1,Cerbelle,François,26/05/1975");
-RedisModule_Log(ctx, "notice", "%d",count++);
-        RedisModule_Call(ctx,"RPUSH","scc",key,"2,Carbonnel,Georges,01/01/1970");
+        RedisModule_Call(ctx,"RPUSH","sc",key,"Id,Nom,Prénom,Date de naissance");
+        RedisModule_Call(ctx,"RPUSH","sc",key,"INT,VARCHAR(255),VARCHAR(255),DATETIME");
+        RedisModule_Call(ctx,"RPUSH","sc",key,"1,Cerbelle,François,26/05/1975");
+        RedisModule_Call(ctx,"RPUSH","sc",key,"2,Carbonnel,Georges,01/01/1970");
         RedisModule_Call(ctx,"EXPIRE","sl",key,cur->ttl);
         RedisModule_FreeCallReply(reply);
         reply = RedisModule_Call(ctx,"LRANGE","scc",key,"0","-1");
