@@ -17,12 +17,12 @@
 ///
 ///  @internal
 ///      Compiler  gcc
-/// Last modified  2017-05-24 16:05
+/// Last modified  2017-05-24 16:15
 ///  Organization  Cerbelle.net
 ///       Company  Home
 ///
 ///  This source code is released for free distribution under the terms of the
-///  GNU General Public License as published by the Free Software Foundation.
+///  GNU Affero General Public License as published by the Free Software Foundation.
 ///
 
 
