@@ -6,6 +6,7 @@
 ///
 /// @todo DB abstraction layer with dynamically loadable modules (dl)
 /// @todo Connection pool
+/// @todo Cluster awareness (CE/EE)
 ///
 /// @bug 
 /// @version
@@ -16,6 +17,9 @@
 /// underlying data source (MySQL in our case) while making Redis available for other queries (because a MySQL 
 /// fetch can be long relative to other Redis queries), get the value, store / it with an expiration time (TTL) and
 /// send it back to the client.
+///
+/// create table customer (id integer, Nom varchar(255), prenom varchar, `date de naissance` datetime);
+/// insert into customer values (1,"c","f","2017-05-26");
 ///
 ///  @internal
 ///      Compiler  gcc
@@ -151,6 +155,7 @@ int SCacheGet_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
         RedisModule_ReplyWithCallReply(ctx,reply);
         return REDISMODULE_OK;
     } else {
+        RedisModule_FreeCallReply(reply);
         MysqlCredentials_t *cur=mysqlconnections;
 
         const char* cachename = RedisModule_StringPtrLen(argv[1], &len);
@@ -164,69 +169,50 @@ int SCacheGet_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
         }
 
         // TODO: Query MySQL
-//        MYSQL * connection, mysql;
-//
-//        mysql_init(&mysql);
-//        connection = mysql_real_connect(&mysql, "localhost", "orausr", "orapw", "oradb", 0, 0, 0);
-//        if( connection == NULL ) 
-//        { return -1; }
-//        else 
-//        { return 0; }
-//
-//        // int mysql_query(MYSQL *mysql, const char *stmt_str)
-//        
-//        char *query = "SELECT symbol, openPrice, currPrice, high52, low52, FROM Stock WHERE symbol = '%s'";
-//        char *sql;
-//        int state;
-//
-//        error = (char *)NULL;
-//        sql = (char *)malloc((strlen(query) + strlen(symbol) + 1) * sizeof(char));
-//        sprintf(sql, query, symbol);
-//        state = mysql_query(connection, sql);
-//        free(sql);
-//        if( state != 0 ) {
-//            error = mysql_error(connection);
-//            return (Stock *)NULL;
-//        }
-//        else {
-//            MYSQL_RES *result;
-//            Stock *stock;
-//            MYSQL_ROW row;
-//
-//            result = mysql_store_result(connection);
-//            if( result == (MYSQL_RES *)NULL ) {
-//                error = mysql_error(connection);
-//                return (Stock *)NULL;
-//            }
-//            stock = (Stock *)malloc(sizeof(Stock));
-//            row = mysql_fetch_row(result);
-//            if( !row ) {
-//                error = "Invalid symbol.";
-//                return (Stock *)NULL;
-//            }
-//            stock->symbol = row[0];
-//            stock->open_price = atof(row[1]);
-//            stock->current_price = atof(row[2]);
-//            stock->high52 = atof(row[3]);
-//            stock->low52 = atof(row[4]);
-//            return stock;
-//        }
-//
-//
-//        if( connection != NULL ) {
-//            mysql_close(connection);
-//            connection = NULL;
-//        }
-//
+        MYSQL * connection, mysql;
 
-        RedisModule_Call(ctx,"RPUSH","sc",key,"Id,Nom,Prénom,Date de naissance");
-        RedisModule_Call(ctx,"RPUSH","sc",key,"INT,VARCHAR(255),VARCHAR(255),DATETIME");
-        RedisModule_Call(ctx,"RPUSH","sc",key,"1,Cerbelle,François,26/05/1975");
-        RedisModule_Call(ctx,"RPUSH","sc",key,"2,Carbonnel,Georges,01/01/1970");
-        RedisModule_Call(ctx,"EXPIRE","sl",key,cur->ttl);
-        RedisModule_FreeCallReply(reply);
-        reply = RedisModule_Call(ctx,"LRANGE","scc",key,"0","-1");
-        RedisModule_ReplyWithCallReply(ctx,reply);
+        mysql_init(&mysql);
+        // @todo: timeout
+        connection = mysql_real_connect(&mysql, cur->dbhost, cur->dbuser, cur->dbpass, cur->dbname, 0, 0, 0);
+        if( connection == NULL ) { 
+            RedisModule_ReplyWithError(ctx,"ERR cannot connect to DB");
+            return REDISMODULE_OK;
+        }
+
+        int state;
+
+        state = mysql_query(connection, query);
+        if( state != 0 ) {
+            const char *error = mysql_error(connection);
+            RedisModule_ReplyWithError(ctx,error);
+            return REDISMODULE_OK;
+        }
+        else {
+            MYSQL_RES *result;
+            MYSQL_ROW row;
+
+            result = mysql_store_result(connection);
+            if( result == (MYSQL_RES *)NULL ) {
+                const char *error = mysql_error(connection);
+                RedisModule_ReplyWithError(ctx,error);
+            }
+            RedisModule_Call(ctx,"RPUSH","sc",key,"Id,Nom,Prénom,Date de naissance");
+            RedisModule_Call(ctx,"RPUSH","sc",key,"INT,VARCHAR(255),VARCHAR(255),DATETIME");
+            row = mysql_fetch_row(result);
+            while (row) {
+                RedisModule_Call(ctx,"RPUSH","sc",key,"1,Cerbelle,François,26/05/1975");
+                row = mysql_fetch_row(result);
+            }
+            RedisModule_Call(ctx,"EXPIRE","sl",key,cur->ttl);
+            reply = RedisModule_Call(ctx,"LRANGE","scc",key,"0","-1");
+            RedisModule_ReplyWithCallReply(ctx,reply);
+        }
+
+        if( connection != NULL ) {
+            mysql_close(connection);
+            connection = NULL;
+        }
+
         return REDISMODULE_OK;
     }
 }
