@@ -23,7 +23,7 @@ all: scache.so
 
 scache.xo: ../redismodule.h
 
-scache.so: scache.xo
+scache.so: scache.xo 
 	$(LD) -o $@ $< $(SHOBJ_LDFLAGS) $(LIBS) $(MYSQL_LIBS) -lc
 
 clean:
