@@ -250,18 +250,29 @@ int SCacheDelete_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int
 	size_t len;
     const char* cachename = RedisModule_StringPtrLen(argv[1], &len);
 
-	while ((cur)&&(cur->next)&&(strcmp(cachename,cur->next->cachename)))
-		cur=cur->next;
-
-    if (cur) {
-        tmp=cur->next;
-        cur->next = cur->next->next;
+    if ((CacheList)&&!strcmp(cachename,CacheList->cachename)) {
+        // First cache in the list
+        tmp=CacheList;
+        CacheList = CacheList->next;
         mysql_close(tmp->dbhandle);
         RedisModule_Free(tmp);
         RedisModule_ReplyWithLongLong(ctx,1);
-    } else 
-        RedisModule_ReplyWithError(ctx,"ERR Cache definition not found.");
+    } else {
+        // Not the first cache in the list, search in the list
+        while ((cur)&&(cur->next)&&(strcmp(cachename,cur->next->cachename)))
+            cur=cur->next;
 
+        if (cur) {
+            // Cache definition found
+            tmp=cur->next;
+            cur->next = cur->next->next;
+            mysql_close(tmp->dbhandle);
+            RedisModule_Free(tmp);
+            RedisModule_ReplyWithLongLong(ctx,1);
+        } else 
+            RedisModule_ReplyWithError(ctx,"ERR Cache definition not found.");
+
+    }
     return REDISMODULE_OK;
 }
 

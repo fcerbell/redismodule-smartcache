@@ -1,6 +1,82 @@
 # redismodule-smartcache
 Smart and autonomous cache in a redis module
 
+# Summary
+
+This modules implements a pass-through cache, or a proxy cache,
+or a transparent cache.
+
+# Longer description
+
+It currently only connects to MySQL database, but can be easily
+ported to any other database, SQL or NoSQL, to accelerate the
+queries or to minimize the load on the underlying database.
+
+The goal is to make the application simple, it only has to query
+the cache and the cache will eventually query the underlying
+database. No need to manage the cache and the DB connection at
+the application level anymore. No need to link and use the DB
+driver in the application anymore.
+
+One of the usecase is to accelerate the queries and minimize the
+latency, another usecase is to lower the load pressure on the
+database (making more resources available for other tasks or
+minimizing the costs).
+
+# Commands
+
+The module implements two sets of Redis commands. The first one
+is used to manage the caches, whereas the second one is used to
+query the caches.
+
+## Cache management
+
+The following commands are used to administrate the caches, some
+kind of DDL for SCache.
+
+### scache.create
+### scache.list
+### scache.info
+### scache.test
+### scache.flush
+### scache.delete
+
+## Cache querying
+
+These commands are used by the application to actually query the
+cache, some kind of DML.
+
+### scache.getvalue
+### scache.getmeta
+
+# Specifications
+
+The module defines caches. Each cache is currently a MySQL
+connection (host/port/user/password/schema) and a default TTL.
+Once a cache is defined, it can be queried with SQL queries, if
+it does not already have the resultset, it blocks the client and
+execute the SQL query against MySQL in a thread (to avoid
+blocking Redis and make the query asynchronous), store the
+result set in Redis with a TTL. At the end, it returns the
+resultset to the client.
+
+The cache definition has to be stored in a Redis datastructure
+to have the benefit of easy persistency and replication across a
+cluster nodes, but the connection handle has to be stored in the
+node memory, in internal datastructure as it is specific to a
+single instance. We keep the connection handle to avoid
+opening/closing connections and we use the auto-reconnect MySQL
+feature to keep the connection always ready for queries.
+
+The resultsets don't have to be replicated across the cluster
+and don't have to be persisted, neither. Thus, we store them in
+an internal datastructure. We try to leverave the Redis TTL to
+expire our resultset. For each dataset, we create a key in a
+Redis data structure, with a TTL. The module starts a thread
+that subscribe to the notification channel to be notified when a
+key expires and to delete the related resultset from internal
+datastructures.
+
 # Build instructions
 
 ## Prerequisites
