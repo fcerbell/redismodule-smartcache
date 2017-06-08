@@ -35,11 +35,77 @@ The following commands are used to administrate the caches, some
 kind of DDL for SCache.
 
 ### scache.create
+
+scache.create
+
+Defines a new cache and its underlying database
+connection.  A connection is immediately openned to the
+database and the creation will fail if the database is
+not reachable.
+
+*Arguments*
+- <cachename> is the cache identifier. It has to be unique.
+- <ttl> is the default Time To Live in seconds before value expiration
+- <host> IP address or DNS name of the database server
+- <port> TCP port of the database server (usually 3306)
+- <user> login name to connect with to the database
+- <password> password to connect to the database
+- <schema> name of the database schema
+
+*Return value*
+If the connection test succeed, returns the cache configuration (without password), otherwise returns an error.
+
+*Note*: This command does not appear in the `MONITOR` output to avoid displaying passwords.
+
 ### scache.list
+
+Lists all the defined caches
+
+*Arguments*
+None
+
+*Return value*
+A simple list of available cachenames.
+
 ### scache.info
+
+Gets information about one specific defined cache.
+
+*Arguments*
+<cachename> Name of the cache
+
+*Return value*
+If the cache exists, returns its configuration (without password), otherwise returns an error
+
 ### scache.test
+
+Test the database connection of a specific cache (in case it broke after the cache creation).
+
+*Arguments*
+<cachename> Name of the cache
+
+*Return value*
+"1" if the test succeed, otherwise an error.
+
 ### scache.flush
+
+Flush all the cached resultsets from a cache.
+
+*Arguments*
+<cachename> Name of the cache
+
+*Return value*
+Number of purged values
+
 ### scache.delete
+
+Flush a cache and delete its definition
+
+*Arguments*
+<cachename> Name of the cache
+
+*Return value*
+Number of purged values
 
 ## Cache querying
 
@@ -47,7 +113,26 @@ These commands are used by the application to actually query the
 cache, some kind of DML.
 
 ### scache.getvalue
+
+Returns a resultset values from the cache, eventually fetching them automatically from the database.
+
+*Arguments*
+<cachename> Name of the cache
+<query> Underlying database query string
+
+*Return value*
+A list of records, each of them is a pipe-separated column values
+
 ### scache.getmeta
+
+Returns a resultset metadata from the cache, eventually fetching them automatically from the database.
+
+*Arguments*
+<cachename> Name of the cache
+<query> Underlying database query string
+
+*Return value*
+A list of column name / column type, pipe-separated.
 
 # Specifications
 
