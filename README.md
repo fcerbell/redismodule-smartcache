@@ -36,8 +36,6 @@ kind of DDL for SCache.
 
 ### scache.create
 
-scache.create
-
 Defines a new cache and its underlying database
 connection.  A connection is immediately openned to the
 database and the creation will fail if the database is
@@ -53,7 +51,7 @@ not reachable.
 - *schema* name of the database schema
 
 **Return value**
-If the connection test succeed, returns the cache configuration (without password), otherwise returns an error.
+- If the connection test succeed, returns the cache configuration (without password), otherwise returns an error.
 
 *Note*: This command does not appear in the `MONITOR` output to avoid displaying passwords.
 
@@ -62,50 +60,50 @@ If the connection test succeed, returns the cache configuration (without passwor
 Lists all the defined caches
 
 **Arguments**
-None
+- None
 
 **Return value**
-A simple list of available cachenames.
+- A simple list of available cachenames.
 
 ### scache.info
 
 Gets information about one specific defined cache.
 
 **Arguments**
-*cachename* Name of the cache
+- *cachename* Name of the cache
 
 **Return value**
-If the cache exists, returns its configuration (without password), otherwise returns an error
+- If the cache exists, returns its configuration (without password), otherwise returns an error
 
 ### scache.test
 
 Test the database connection of a specific cache (in case it broke after the cache creation).
 
 **Arguments**
-*cachename* Name of the cache
+- *cachename* Name of the cache
 
 **Return value**
-"1" if the test succeed, otherwise an error.
+- "1" if the test succeed, otherwise an error.
 
 ### scache.flush
 
 Flush all the cached resultsets from a cache.
 
 **Arguments**
-*cachename* Name of the cache
+- *cachename* Name of the cache
 
 **Return value**
-Number of purged values
+- Number of purged values
 
 ### scache.delete
 
 Flush a cache and delete its definition
 
 **Arguments**
-*cachename* Name of the cache
+- *cachename* Name of the cache
 
 **Return value**
-Number of purged values
+- Number of purged values
 
 ## Cache querying
 
@@ -117,22 +115,22 @@ cache, some kind of DML.
 Returns a resultset values from the cache, eventually fetching them automatically from the database.
 
 **Arguments**
-*cachename* Name of the cache
-*query* Underlying database query string
+- *cachename* Name of the cache
+- *query* Underlying database query string
 
 **Return value**
-A list of records, each of them is a pipe-separated column values
+- A list of records, each of them is a pipe-separated column values
 
 ### scache.getmeta
 
 Returns a resultset metadata from the cache, eventually fetching them automatically from the database.
 
 **Arguments**
-*cachename* Name of the cache
-*query* Underlying database query string
+- *cachename* Name of the cache
+- *query* Underlying database query string
 
 **Return value**
-A list of column name / column type, pipe-separated.
+- A list of column name / column type, pipe-separated.
 
 # Specifications
 
@@ -241,4 +239,25 @@ scache.info cache2
 scache.delete cache2
 scache.list
 scache.getvalue cache1 'select * from customer'
+```
+
+# Benchmark
+
+This is a very quick benchmark. It is impacted by the binaries implementations, but basically, both tests suffers from the same constraints : fork a process, read a program
+from disk and execute it, open a connection to the source (mysql or redis), execute the same query, get the same resultset. I added an extra space in the second query to avoid
+using the previously cached resultset in MySQL's internal cache.
+
+```
+i=0; time while [ $i -lt 10000 ]; do echo "select * from customer" | mysql -u redisuser -predispassword redisdb > /dev/null ; i=$((i+1)); done; uptime
+
+i=0; time while [ $i -lt 10000 ]; do redis-cli 'scache.getvalue cache1 "select *  from customer"' > /dev/null ; i=$((i+1)); done; uptime
+```
+
+The same test, using one connection and sending 1000000 commands
+
+```
+i=0; time while [ $i -lt 10000 ]; do echo "select * from customer;"; i=$((i+1)); done | mysql -u redisuser -predispassword redisdb > /dev/null;  uptime
+
+i=0; time while [ $i -lt 10000 ]; do echo 'scache.getvalue cache1 "select *  from customer"' ; i=$((i+1)); done | redis-cli > /dev/null ; uptime
+
 ```

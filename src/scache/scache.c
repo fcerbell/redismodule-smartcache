@@ -299,6 +299,7 @@ int SCachePopulate(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
 
     const char* query = RedisModule_StringPtrLen(argv[2], &len);
     int state = mysql_query(cur->dbhandle, query);
+    RedisModule_Log(ctx,"notice","Executed query %s",query);
     if( state != 0 ) {
         const char *error = mysql_error(cur->dbhandle);
         RedisModule_ReplyWithError(ctx,error);
@@ -368,19 +369,20 @@ int SCachePopulate(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
         MYSQL_ROW row;
         char* rowstr;
         char* value;
+        uint16_t count=0;
         while (NULL != (row = mysql_fetch_row(result))) {
             rowstr = RedisModule_Strdup("");
-RedisModule_Log(ctx,"notice","rowstr=%s (%d)",rowstr,strlen(rowstr));
             for(i = 0; i < num_fields; i++) {
                 value = (char*)(row[i] ? row[i] : "NULL");
                 rowstr = (char*)RedisModule_Realloc(rowstr,strlen(rowstr)+1+strlen(value)+1);
                 strcat(rowstr,"|");
                 strcat(rowstr,value);
-RedisModule_Log(ctx,"notice","rowstr[1]=%s (%d)",&rowstr[1],strlen(&rowstr[1]));
             }
             RedisModule_Call(ctx,"RPUSH","sc",valuekey,&rowstr[1],strlen(&rowstr[1]));
             RedisModule_Free(rowstr);
+            count++;
         }
+        RedisModule_Log(ctx,"notice","found %d rows",count);
 
         // Set expiration time (TTL) on the meta and value keys
         RedisModule_Call(ctx,"EXPIRE","sl",metakey,cur->ttl);
