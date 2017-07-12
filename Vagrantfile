@@ -114,9 +114,11 @@ Vagrant.configure("2") do |config|
     redis-cli scache.create cache4 5 localhost 3306 redisdb redisuser redispassword
     redis-cli scache.list
     redis-cli scache.info cache2
-    #redis-cli scache.delete cache2
-    #redis-cli scache.list
-    #redis-cli scache.delete cache3
+    redis-cli scache.delete cache2
+    redis-cli scache.list
+    redis-cli scache.delete nonexisting
+    redis-cli scache.delete cache3
+    redis-cli scache.delete nonexisting
     time redis-cli scache.getvalue cache1 'select * from customer'
     time redis-cli scache.getvalue cache1 'select * from customer'
   SHELL
