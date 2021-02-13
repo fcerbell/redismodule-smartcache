@@ -43,6 +43,7 @@
 ///  GNU General Public License as published by the Free Software Foundation.
 ///
 
+#define REDISMODULE_EXPERIMENTAL_API
 #include "../redismodule.h"
 #include <mysql/mysql.h>
 #include <stdlib.h>
@@ -117,7 +118,8 @@ int SCacheCreate_Timeout(RedisModuleCtx *ctx, RedisModuleString **argv, int argc
 }
 
 /* Private data freeing callback for SCACHE.CREATE command. */
-void SCacheCreate_FreeData(void *privdata) {
+void SCacheCreate_FreeData(RedisModuleCtx *ctx, void *privdata) {
+    REDISMODULE_NOT_USED(ctx);
     CacheDetails *cur=privdata;
     RedisModule_Free(cur->cachename);
     RedisModule_Free(cur->dbhost);
@@ -151,8 +153,8 @@ void *SCacheCreate_ThreadMain(void *arg) {
 // Creates a new cache configuration and stores it in a hash
 // SCACHE.CREATE <CacheName> <DefaultTTL> <dbhost> <dbport> <dbname> <dbuser> <dbpass>
 int SCacheCreate_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
-    REDISMODULE_NOT_USED(argv);
-    REDISMODULE_NOT_USED(argc);
+    // REDISMODULE_NOT_USED(argv);
+    //REDISMODULE_NOT_USED(argc);
     if (argc != 8 ) return RedisModule_WrongArity(ctx);
 
     RedisModule_AutoMemory(ctx);
