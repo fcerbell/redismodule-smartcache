@@ -12,7 +12,7 @@ else
 endif
 
 MYSQL_CFLAGS =  -I/usr/include/mysql -DBIG_JOINS=1  -fno-strict-aliasing    -g -DNDEBUG
-MYSQL_LIBS =  -L/usr/lib/x86_64-linux-gnu -lmysqlclient -lpthread -lz -lm -ldl
+MYSQL_LIBS =  -L/usr/lib64/mysql/ -L/usr/lib/x86_64-linux-gnu -lmysqlclient -lpthread -lz -lm -ldl
 
 .SUFFIXES: .c .so .xo .o
 
